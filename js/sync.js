@@ -33,7 +33,7 @@ class SyncEngine {
     if (!response.ok) throw new Error('Push failed: HTTP ' + response.status);
     const result = await response.json();
     if (!result.success) throw new Error('Push rejected: ' + (result.error || 'Unknown error'));
-    for (const brief of dirtyBriefs) { await db.markClean(brief['Briefs ID']); }
+    for (const brief of dirtyBriefs) { await db.markClean(brief[''BriefsID'']); }
     console.log('[Sync] Pushed ' + dirtyBriefs.length + ' brief(s)');
     return { pushed: dirtyBriefs.length };
   }
@@ -47,7 +47,14 @@ class SyncEngine {
     if (data.airports) { await db.bulkPut('airports', data.airports); console.log('[Sync] Pulled ' + data.airports.length + ' airport(s)'); }
     if (data.hotels) { await db.bulkPut('hotels', data.hotels); console.log('[Sync] Pulled ' + data.hotels.length + ' hotel(s)'); }
     if (data.cities) { await db.bulkPut('cities', data.cities); console.log('[Sync] Pulled ' + data.cities.length + ' cities'); }
-    if (data.briefs) { await db.syncBriefsFromSheet(data.briefs); console.log('[Sync] Pulled ' + data.briefs.length + ' brief(s)'); }
+    if (data.briefs) { const mappedBriefs = data.briefs.map(b => {
+  if (b['Briefs ID'] && !b.BriefsID) {
+    b.BriefsID = b['Briefs ID'];
+    delete b['Briefs ID'];
+  }
+  return b;
+});
+await db.syncBriefsFromSheet(mappedBriefs);; console.log('[Sync] Pulled ' + data.briefs.length + ' brief(s)'); }
     return { pulled: true };
   }
 
