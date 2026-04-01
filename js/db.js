@@ -11,7 +11,7 @@ class FlightBriefDB {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('briefs')) {
-          const briefsStore = db.createObjectStore('briefs', { keyPath: 'Briefs ID' });
+          const briefsStore = db.createObjectStore('briefs', { keyPath: ''BriefsID'' });
           briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
           briefsStore.createIndex('Origin', 'Origin', { unique: false });
           briefsStore.createIndex('Destination', 'Destination', { unique: false });
@@ -69,14 +69,14 @@ class FlightBriefDB {
 
   async saveBrief(brief) {
     return new Promise((resolve, reject) => {
-      if (!brief['Briefs ID']) {
-        brief['Briefs ID'] = 'BR-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      if (!brief[''BriefsID'']) {
+        brief[''BriefsID''] = 'BR-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       }
       brief.dirty = true;
       brief.LastUpdated = new Date().toISOString();
       const store = this._getStore('briefs', 'readwrite');
       const request = store.put(brief);
-      request.onsuccess = () => resolve(brief['Briefs ID']);
+      request.onsuccess = () => resolve(brief[''BriefsID'']);
       request.onerror = () => reject(request.error);
     });
   }
@@ -135,7 +135,7 @@ class FlightBriefDB {
         const tx = this.db.transaction('briefs', 'readwrite');
         const store = tx.objectStore('briefs');
         for (const serverBrief of serverBriefs) {
-          const id = serverBrief['Briefs ID'];
+          const id = serverBrief[''BriefsID''];
           if (!id) continue;
           const getRequest = store.get(id);
           getRequest.onsuccess = () => {
