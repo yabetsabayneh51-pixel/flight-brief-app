@@ -11,7 +11,7 @@ class FlightBriefDB {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('briefs')) {
-          const briefsStore = db.createObjectStore('briefs', { keyPath: ''BriefsID'' });
+          const briefsStore = db.createObjectStore('briefs', { keyPath: 'BriefsID' });
           briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
           briefsStore.createIndex('Origin', 'Origin', { unique: false });
           briefsStore.createIndex('Destination', 'Destination', { unique: false });
