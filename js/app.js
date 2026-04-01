@@ -38,7 +38,7 @@
     if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
     emptyState.classList.add('hidden');
     container.innerHTML = filtered.map(brief => {
-      const id = brief[''BriefsID''] || '';
+      const id = brief['BriefsID'] || '';
       const flight = brief.Flight_Number || '\u2014';
       const origin = brief.Origin || '???';
       const dest = brief.Destination || '???';
