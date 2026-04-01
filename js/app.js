@@ -38,7 +38,7 @@
     if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
     emptyState.classList.add('hidden');
     container.innerHTML = filtered.map(brief => {
-      const id = brief['Briefs ID'] || '';
+      const id = brief[''BriefsID''] || '';
       const flight = brief.Flight_Number || '\u2014';
       const origin = brief.Origin || '???';
       const dest = brief.Destination || '???';
@@ -194,7 +194,7 @@
   function closeBriefModal() { document.getElementById('modal-brief').classList.add('hidden'); }
 
   function populateForm(brief) {
-    const fieldMap = [['f-id','Briefs ID'],['f-flight','Flight_Number'],['f-date','Date'],['f-origin','Origin'],['f-dest','Destination'],['f-route','RouteKey'],['f-sectors','Sectors'],['f-type','FlightType'],['f-dep-proc','DepProcedures'],['f-dep-freq','DepFrequency'],['f-dep-notes','DepNotes'],['f-enroute','EnrouteNotes'],['f-arr-rwy','ArrRunway'],['f-taxi','TaxiRoute'],['f-exp-taxi','ExpectedTaxi'],['f-gate','Gate'],['f-arr-freq','ArrFrequency'],['f-apt-notes','AirportNotes'],['f-transport','TransportTimeToHotel'],['f-hotel','HotelName'],['f-hotel-loc','HotelLocation'],['f-hotel-amen','HotelAmenities'],['f-hotel-notes','HotelNotes'],['f-city','City'],['f-country','CityCountry'],['f-tz','Timezone'],['f-todo','ThingsToDo'],['f-shopping','ShoppingAreas']];
+    const fieldMap = [['f-id',''BriefsID''],['f-flight','Flight_Number'],['f-date','Date'],['f-origin','Origin'],['f-dest','Destination'],['f-route','RouteKey'],['f-sectors','Sectors'],['f-type','FlightType'],['f-dep-proc','DepProcedures'],['f-dep-freq','DepFrequency'],['f-dep-notes','DepNotes'],['f-enroute','EnrouteNotes'],['f-arr-rwy','ArrRunway'],['f-taxi','TaxiRoute'],['f-exp-taxi','ExpectedTaxi'],['f-gate','Gate'],['f-arr-freq','ArrFrequency'],['f-apt-notes','AirportNotes'],['f-transport','TransportTimeToHotel'],['f-hotel','HotelName'],['f-hotel-loc','HotelLocation'],['f-hotel-amen','HotelAmenities'],['f-hotel-notes','HotelNotes'],['f-city','City'],['f-country','CityCountry'],['f-tz','Timezone'],['f-todo','ThingsToDo'],['f-shopping','ShoppingAreas']];
     for (const [inputId, propName] of fieldMap) { const el = document.getElementById(inputId); if (el) el.value = brief[propName] || ''; }
   }
 
@@ -202,7 +202,7 @@
 
   async function saveBriefFromForm() {
     const brief = {};
-    const fieldMap = [['f-id','Briefs ID'],['f-flight','Flight_Number'],['f-date','Date'],['f-origin','Origin'],['f-dest','Destination'],['f-route','RouteKey'],['f-sectors','Sectors'],['f-type','FlightType'],['f-dep-proc','DepProcedures'],['f-dep-freq','DepFrequency'],['f-dep-notes','DepNotes'],['f-enroute','EnrouteNotes'],['f-arr-rwy','ArrRunway'],['f-taxi','TaxiRoute'],['f-exp-taxi','ExpectedTaxi'],['f-gate','Gate'],['f-arr-freq','ArrFrequency'],['f-apt-notes','AirportNotes'],['f-transport','TransportTimeToHotel'],['f-hotel','HotelName'],['f-hotel-loc','HotelLocation'],['f-hotel-amen','HotelAmenities'],['f-hotel-notes','HotelNotes'],['f-city','City'],['f-country','CityCountry'],['f-tz','Timezone'],['f-todo','ThingsToDo'],['f-shopping','ShoppingAreas']];
+    const fieldMap = [['f-id',''BriefsID''],['f-flight','Flight_Number'],['f-date','Date'],['f-origin','Origin'],['f-dest','Destination'],['f-route','RouteKey'],['f-sectors','Sectors'],['f-type','FlightType'],['f-dep-proc','DepProcedures'],['f-dep-freq','DepFrequency'],['f-dep-notes','DepNotes'],['f-enroute','EnrouteNotes'],['f-arr-rwy','ArrRunway'],['f-taxi','TaxiRoute'],['f-exp-taxi','ExpectedTaxi'],['f-gate','Gate'],['f-arr-freq','ArrFrequency'],['f-apt-notes','AirportNotes'],['f-transport','TransportTimeToHotel'],['f-hotel','HotelName'],['f-hotel-loc','HotelLocation'],['f-hotel-amen','HotelAmenities'],['f-hotel-notes','HotelNotes'],['f-city','City'],['f-country','CityCountry'],['f-tz','Timezone'],['f-todo','ThingsToDo'],['f-shopping','ShoppingAreas']];
     for (const [inputId, propName] of fieldMap) { const el = document.getElementById(inputId); if (el) brief[propName] = el.value.trim(); }
     await db.saveBrief(brief); closeBriefModal(); await renderBriefs(); toast('Brief saved \u2713', 'success');
     if (navigator.onLine && syncEngine.apiUrl) { syncEngine.fullSync().then(() => renderBriefs()); }
