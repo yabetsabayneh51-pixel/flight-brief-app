@@ -33,7 +33,7 @@ class SyncEngine {
     if (!response.ok) throw new Error('Push failed: HTTP ' + response.status);
     const result = await response.json();
     if (!result.success) throw new Error('Push rejected: ' + (result.error || 'Unknown error'));
-    for (const brief of dirtyBriefs) { await db.markClean(brief[''BriefsID'']); }
+    for (const brief of dirtyBriefs) { await db.markClean(brief['BriefsID']); }
     console.log('[Sync] Pushed ' + dirtyBriefs.length + ' brief(s)');
     return { pushed: dirtyBriefs.length };
   }
