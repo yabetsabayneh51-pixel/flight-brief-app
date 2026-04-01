@@ -1,72 +1,117 @@
-class SyncEngine {
+/*
+ * Flight Brief — IndexedDB Database Layer
+ *
+ * WHY INDEXEDB (not localStorage)?
+ *  - localStorage is synchronous, limited to ~5MB, and blocks the UI thread
+ *  - IndexedDB is async, handles 50MB+ easily, supports indexes for fast queries,
+ *    and can store complex objects without JSON serialization overhead
+ *  - For a data-heavy offline app, IndexedDB is the correct choice
+ *
+ * Architecture:
+ *  - One database: 'FlightBriefDB'
+ *  - Four object stores (tables): briefs, airports, hotels, cities
+ *  - Briefs have a 'dirty' flag: true when modified locally but not yet synced
+ *  - All methods return Promises for clean async/await usage
+ */
+
+class FlightBriefDB {
   constructor() {
-    this._intervalHandle = null;
-    this._syncing = false;
-    this.onSyncStart = null;
-    this.onSyncEnd = null;
-    this.onSyncError = null;
-  }
-  get apiUrl() { return localStorage.getItem('fb_api_url') || ''; }
-  set apiUrl(url) { localStorage.setItem('fb_api_url', url); }
-
-  async fullSync() {
-    if (this._syncing) { console.log('[Sync] Already syncing, skipping'); return { success: false, reason: 'already_syncing' }; }
-    if (!this.apiUrl) { console.log('[Sync] No API URL configured'); return { success: false, reason: 'no_api_url' }; }
-    this._syncing = true;
-    this.onSyncStart?.();
-    let result = { success: false, pushed: 0, pulled: false };
-    try {
-      const pushResult = await this._pushDirtyBriefs(); result.pushed = pushResult.pushed;
-      const pullResult = await this._pullFromSheet(); result.pulled = pullResult.pulled;
-      result.success = true; this.onSyncEnd?.(result);
-    } catch (error) { console.error('[Sync] Error:', error); result.error = error.message; this.onSyncError?.(error); }
-    finally { this._syncing = false; }
-    return result;
+    this.DB_NAME = 'FlightBriefDB';
+    this.DB_VERSION = 2;
+    this.db = null;
   }
 
-  async _pushDirtyBriefs() {
-    const dirtyBriefs = await db.getDirtyBriefs();
-    if (dirtyBriefs.length === 0) { console.log('[Sync] No dirty briefs to push'); return { pushed: 0 }; }
-    console.log('[Sync] Pushing ' + dirtyBriefs.length + ' dirty brief(s)');
-    const cleanPayload = dirtyBriefs.map(brief => { const copy = { ...brief }; delete copy.dirty; return copy; });
-    const response = await fetch(this.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'push', briefs: cleanPayload }) });
-    if (!response.ok) throw new Error('Push failed: HTTP ' + response.status);
-    const result = await response.json();
-    if (!result.success) throw new Error('Push rejected: ' + (result.error || 'Unknown error'));
-    for (const brief of dirtyBriefs) { await db.markClean(brief['BriefsID']); }
-    console.log('[Sync] Pushed ' + dirtyBriefs.length + ' brief(s)');
-    return { pushed: dirtyBriefs.length };
+  open() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+
+        if (!db.objectStoreNames.contains('briefs')) {
+          const briefsStore = db.createObjectStore('briefs', {
+            keyPath: 'BriefsID'
+          });
+          briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
+          briefsStore.createIndex('Origin', 'Origin', { unique: false });
+          briefsStore.createIndex('Destination', 'Destination', { unique: false });
+          briefsStore.createIndex('Date', 'Date', { unique: false });
+          briefsStore.createIndex('dirty', 'dirty', { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains('airports')) {
+          const airportsStore = db.createObjectStore('airports', {
+            keyPath: 'ICAO'
+          });
+          airportsStore.createIndex('AirportName', 'AirportName', { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains('hotels')) {
+          const hotelsStore = db.createObjectStore('hotels', {
+            keyPath: 'HotelName'
+          });
+          hotelsStore.createIndex('City', 'City', { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains('cities')) {
+          const citiesStore = db.createObjectStore('cities', {
+            keyPath: 'City'
+          });
+          citiesStore.createIndex('Country', 'Country', { unique: false });
+        }
+
+        console.log('[DB] Schema upgraded to version', this.DB_VERSION);
+      };
+
+      request.onsuccess = (event) => {
+        this.db = event.target.result;
+        console.log('[DB] Opened successfully');
+        resolve(this.db);
+      };
+
+      request.onerror = (event) => {
+        console.error('[DB] Open error:', event.target.error);
+        reject(event.target.error);
+      };
+    });
   }
 
-  async _pullFromSheet() {
-    console.log('[Sync] Pulling from sheet...');
-    const response = await fetch(this.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pull' }) });
-    if (!response.ok) throw new Error('Pull failed: HTTP ' + response.status);
-    const data = await response.json();
-    if (!data.success) throw new Error('Pull rejected: ' + (data.error || 'Unknown error'));
-    if (data.airports) { await db.bulkPut('airports', data.airports); console.log('[Sync] Pulled ' + data.airports.length + ' airport(s)'); }
-    if (data.hotels) { await db.bulkPut('hotels', data.hotels); console.log('[Sync] Pulled ' + data.hotels.length + ' hotel(s)'); }
-    if (data.cities) { await db.bulkPut('cities', data.cities); console.log('[Sync] Pulled ' + data.cities.length + ' cities'); }
-    if (data.briefs) { const mappedBriefs = data.briefs.map(b => {
-  if (b['Briefs ID'] && !b.BriefsID) {
-    b.BriefsID = b['Briefs ID'];
-    delete b['Briefs ID'];
-  }
-  return b;
-});
-await db.syncBriefsFromSheet(mappedBriefs);; console.log('[Sync] Pulled ' + data.briefs.length + ' brief(s)'); }
-    return { pulled: true };
+  _getStore(storeName, mode = 'readonly') {
+    const tx = this.db.transaction(storeName, mode);
+    return tx.objectStore(storeName);
   }
 
-  startAutoSync(minutes) {
-    this.stopAutoSync();
-    if (!minutes || minutes <= 0) return;
-    const ms = minutes * 60 * 1000;
-    console.log('[Sync] Auto-sync every ' + minutes + ' min');
-    this._intervalHandle = setInterval(() => { if (navigator.onLine) { this.fullSync(); } }, ms);
+  async getAllBriefs() {
+    return new Promise((resolve, reject) => {
+      const store = this._getStore('briefs');
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const briefs = request.result.sort((a, b) => {
+          const dateCompare = (b.Date || '').localeCompare(a.Date || '');
+          if (dateCompare !== 0) return dateCompare;
+          return (a.Flight_Number || '').localeCompare(b.Flight_Number || '');
+        });
+        resolve(briefs);
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  stopAutoSync() { if (this._intervalHandle) { clearInterval(this._intervalHandle); this._intervalHandle = null; } }
-}
+  async getBrief(id) {
+    return new Promise((resolve, reject) => {
+      const store = this._getStore('briefs');
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
 
-const syncEngine = new SyncEngine();
+  async saveBrief(brief) {
+    return new Promise((resolve, reject) => {
+      if (!brief.BriefsID) {
+        brief.BriefsID = 'BR-' + Date.now() + '-' +
+          Math.random().toString(36).substring(2, 6).toUpperCase();
+      }
+      brief.dirty = true;
+      brief.LastUpdated = new Date().toISOString();
+      const store = this._getStore('briefs', 'read
