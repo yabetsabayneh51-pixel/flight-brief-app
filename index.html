@@ -1,98 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Flight Brief">
-  <link rel="manifest" href="manifest.json">
-  <title>Flight Brief</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>CrewBriefs</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+
+<style>
+body{margin:0;font-family:system-ui;background:#020817;color:#e2e8f0;}
+header{padding:14px;background:#0f172a;font-size:20px;}
+input,select,button{margin:6px;padding:10px;border-radius:6px;border:none;}
+button{background:#2563eb;color:white;}
+</style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="topbar-left"><span class="logo">\u2708</span><h1>Flight Brief</h1></div>
-    <div class="topbar-right">
-      <div id="sync-status" class="sync-dot offline" title="Offline"></div>
-      <button id="btn-sync" class="btn-icon" title="Sync Now">\u21bb</button>
-      <button id="btn-add" class="btn-icon btn-primary" title="New Brief">+</button>
-    </div>
-  </header>
-  <nav class="tabs">
-    <button class="tab active" data-tab="briefs">Briefs</button>
-    <button class="tab" data-tab="airports">Airports</button>
-    <button class="tab" data-tab="hotels">Hotels</button>
-    <button class="tab" data-tab="cities">Cities</button>
-  </nav>
-  <main id="view-briefs" class="view active">
-    <div class="search-bar"><input type="text" id="search-briefs" placeholder="Search briefs by flight, origin, dest..." autocomplete="off"></div>
-    <div id="briefs-list" class="card-list"></div>
-    <div id="empty-briefs" class="empty-state hidden"><span class="empty-icon">\ud83d\udccb</span><p>No briefs yet. Tap <strong>+</strong> to create one, or sync from Google Sheets.</p></div>
-  </main>
-  <main id="view-airports" class="view">
-    <div class="search-bar"><input type="text" id="search-airports" placeholder="Search by ICAO or name..." autocomplete="off"></div>
-    <div id="airports-list" class="card-list"></div>
-  </main>
-  <main id="view-hotels" class="view">
-    <div class="search-bar"><input type="text" id="search-hotels" placeholder="Search hotels by name or city..." autocomplete="off"></div>
-    <div id="hotels-list" class="card-list"></div>
-  </main>
-  <main id="view-cities" class="view">
-    <div class="search-bar"><input type="text" id="search-cities" placeholder="Search cities..." autocomplete="off"></div>
-    <div id="cities-list" class="card-list"></div>
-  </main>
-  <div id="modal-brief" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header"><h2 id="modal-title">New Brief</h2><button id="btn-close-modal" class="btn-icon">\u2715</button></div>
-      <form id="brief-form" class="brief-form">
-        <input type="hidden" id="f-id">
-        <fieldset><legend>Flight Info</legend>
-          <div class="form-row"><div class="form-group"><label for="f-flight">Flight #</label><input type="text" id="f-flight" placeholder="e.g. EK501" required></div><div class="form-group"><label for="f-date">Date</label><input type="date" id="f-date" required></div></div>
-          <div class="form-row"><div class="form-group"><label for="f-origin">Origin (ICAO)</label><input type="text" id="f-origin" placeholder="OMDB" maxlength="4" required style="text-transform:uppercase"></div><div class="form-group"><label for="f-dest">Destination (ICAO)</label><input type="text" id="f-dest" placeholder="EGLL" maxlength="4" required style="text-transform:uppercase"></div></div>
-          <div class="form-row"><div class="form-group"><label for="f-route">Route Key</label><input type="text" id="f-route" placeholder="OMDB-EGLL"></div><div class="form-group"><label for="f-sectors">Sectors</label><input type="number" id="f-sectors" value="1" min="1"></div><div class="form-group"><label for="f-type">Flight Type</label><select id="f-type"><option value="Domestic">Domestic</option><option value="International">International</option></select></div></div>
-        </fieldset>
-        <fieldset><legend>Departure</legend>
-          <div class="form-group full"><label for="f-dep-proc">Departure Procedures</label><textarea id="f-dep-proc" rows="2" placeholder="SID, runway, initial climb..."></textarea></div>
-          <div class="form-row"><div class="form-group"><label for="f-dep-freq">Dep Frequency</label><input type="text" id="f-dep-freq" placeholder="118.5"></div><div class="form-group"><label for="f-dep-notes">Dep Notes</label><input type="text" id="f-dep-notes" placeholder="NOTAMs, warnings..."></div></div>
-        </fieldset>
-        <fieldset><legend>En Route</legend><div class="form-group full"><label for="f-enroute">En Route Notes</label><textarea id="f-enroute" rows="3" placeholder="Weather, alternate, route notes..."></textarea></div></fieldset>
-        <fieldset><legend>Arrival</legend>
-          <div class="form-row"><div class="form-group"><label for="f-arr-rwy">Arrival Runway</label><input type="text" id="f-arr-rwy" placeholder="27L"></div><div class="form-group"><label for="f-arr-freq">Arr Frequency</label><input type="text" id="f-arr-freq" placeholder="120.4"></div></div>
-          <div class="form-row"><div class="form-group"><label for="f-taxi">Taxi Route</label><input type="text" id="f-taxi" placeholder="Alpha, Bravo to gate"></div><div class="form-group"><label for="f-exp-taxi">Expected Taxi Time</label><input type="text" id="f-exp-taxi" placeholder="12 min"></div><div class="form-group"><label for="f-gate">Gate</label><input type="text" id="f-gate" placeholder="C15"></div></div>
-          <div class="form-group full"><label for="f-apt-notes">Airport Notes</label><textarea id="f-apt-notes" rows="2" placeholder="Construction, closures..."></textarea></div>
-        </fieldset>
-        <fieldset><legend>Hotel</legend>
-          <div class="form-row"><div class="form-group"><label for="f-hotel">Hotel Name</label><input type="text" id="f-hotel" placeholder="JW Marriott"></div><div class="form-group"><label for="f-transport">Transport to Hotel</label><input type="text" id="f-transport" placeholder="25 min by crew bus"></div></div>
-          <div class="form-group full"><label for="f-hotel-loc">Hotel Location</label><input type="text" id="f-hotel-loc" placeholder="Downtown, near Marina Mall"></div>
-          <div class="form-group full"><label for="f-hotel-amen">Hotel Amenities</label><input type="text" id="f-hotel-amen" placeholder="Pool, gym, restaurant, WiFi"></div>
-          <div class="form-group full"><label for="f-hotel-notes">Hotel Notes</label><input type="text" id="f-hotel-notes" placeholder="Breakfast 6-10, checkout 12pm"></div>
-        </fieldset>
-        <fieldset><legend>City Info</legend>
-          <div class="form-row"><div class="form-group"><label for="f-city">City</label><input type="text" id="f-city" placeholder="Dubai"></div><div class="form-group"><label for="f-country">Country</label><input type="text" id="f-country" placeholder="UAE"></div><div class="form-group"><label for="f-tz">Timezone</label><input type="text" id="f-tz" placeholder="UTC+4"></div></div>
-          <div class="form-group full"><label for="f-todo">Things To Do</label><textarea id="f-todo" rows="2" placeholder="Burj Khalifa, desert safari..."></textarea></div>
-          <div class="form-group full"><label for="f-shopping">Shopping Areas</label><textarea id="f-shopping" rows="2" placeholder="Dubai Mall, Gold Souk..."></textarea></div>
-        </fieldset>
-        <div class="form-actions"><button type="button" id="btn-delete-brief" class="btn btn-danger hidden">Delete</button><button type="submit" class="btn btn-primary">Save Brief</button></div>
-      </form>
-    </div>
-  </div>
-  <div id="modal-settings" class="modal hidden">
-    <div class="modal-content modal-sm">
-      <div class="modal-header"><h2>Settings</h2><button id="btn-close-settings" class="btn-icon">\u2715</button></div>
-      <div class="settings-body">
-        <div class="form-group full"><label for="setting-api-url">Google Apps Script URL</label><input type="url" id="setting-api-url" placeholder="https://script.google.com/macros/s/.../exec"><small>Paste your deployed Apps Script Web App URL here</small></div>
-        <div class="form-group full"><label for="setting-sync-interval">Auto-sync interval</label><select id="setting-sync-interval"><option value="0">Manual only</option><option value="5">Every 5 minutes</option><option value="15" selected>Every 15 minutes</option><option value="30">Every 30 minutes</option></select></div>
-        <div class="settings-actions"><button id="btn-clear-data" class="btn btn-danger">Clear All Local Data</button><button id="btn-export" class="btn btn-secondary">Export Data</button><button id="btn-import" class="btn btn-secondary">Import Data</button><input type="file" id="import-file" accept=".json" class="hidden"></div>
-      </div>
-    </div>
-  </div>
-  <button id="btn-open-settings" class="fab" title="Settings">\u2699</button>
-  <div id="toast-container"></div>
-  <script src="js/db.js"></script>
-  <script src="js/sync.js"></script>
-  <script src="js/app.js"></script>
+
+<header>CrewBriefs</header>
+
+<div style="padding:15px">
+
+<input id="flight" placeholder="Flight Number">
+
+<select id="origin"></select>
+<select id="destination"></select>
+<select id="hotel"></select>
+
+<div id="amenities"></div>
+
+<br>
+<button id="saveBtn">Save Brief</button>
+<button id="syncBtn">Sync</button>
+
+<hr>
+<div id="list"></div>
+
+</div>
+
+<script src="db.js"></script>
+<script src="sync.js"></script>
+<script src="app.js"></script>
+
+<script>
+if("serviceWorker" in navigator){
+ window.addEventListener("load",()=>{
+  navigator.serviceWorker.register("./sw.js");
+ });
+}
+</script>
+
 </body>
 </html>
