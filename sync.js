@@ -1,7 +1,7 @@
 
 const Sync = (()=>{
 
-const API="https://script.google.com/macros/s/AKfycbwqbP6qf9y-bUjtrOqYrmiN9hGJ9SXgym3v4XEcjs2RMUjE7E9iwNA6yPOB-mavRy6dbQ/exec";
+const API="https://script.google.com/macros/s/AKfycbyZR6LEiStjcbwuMkPSu9WU5VogFWidS8GC8R97cO1b_f8ytwtUj8NtrP29FONv1kipCQ/exec";
 
 async function api(action,payload={}){
 
