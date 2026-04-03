@@ -43,57 +43,53 @@ class FlightBriefDB {
 
       // --- SCHEMA DEFINITION ---
       // This runs once when the DB is first created or version changes
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
+      // --- SCHEMA DEFINITION ---
+request.onupgradeneeded = (event) => {
+  const db = event.target.result;
 
-        // ----- BRIEFS STORE -----
-        // Primary key: 'Briefs ID' (matches your Google Sheets column name)
-        if (!db.objectStoreNames.contains('briefs')) {
-          const briefsStore = db.createObjectStore('briefs', {
-            keyPath: 'Briefs ID'   // Each brief has a unique ID as its key
-          });
-          
-          // Indexes allow fast queries on non-key fields
-          // Without indexes, we'd have to scan every record
-          briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
-          briefsStore.createIndex('Origin', 'Origin', { unique: false });
-          briefsStore.createIndex('Destination', 'Destination', { unique: false });
-          briefsStore.createIndex('Date', 'Date', { unique: false });
-          briefsStore.createIndex('dirty', 'dirty', { unique: false });
-          // 'dirty' index: query all locally-modified records for sync
-        }
+  // ----- BRIEFS STORE -----
+  if (!db.objectStoreNames.contains('briefs')) {
+    // FIX: IndexedDB keyPaths with spaces must be handled carefully. 
+    // It is best to use underscores or camelCase, but since your sheet 
+    // uses "Briefs ID", we must ensure it is defined as a single string.
+    const briefsStore = db.createObjectStore('briefs', {
+      keyPath: 'Briefs ID' 
+    });
+    
+    briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
+    briefsStore.createIndex('Origin', 'Origin', { unique: false });
+    briefsStore.createIndex('Destination', 'Destination', { unique: false });
+    briefsStore.createIndex('Date', 'Date', { unique: false });
+    briefsStore.createIndex('dirty', 'dirty', { unique: false });
+  }
 
-        // ----- AIRPORTS STORE -----
-        // Primary key: ICAO code (e.g., "OMDB", "EGLL")
-        if (!db.objectStoreNames.contains('airports')) {
-          const airportsStore = db.createObjectStore('airports', {
-            keyPath: 'ICAO'
-          });
-          airportsStore.createIndex('AirportName', 'AirportName', { unique: false });
-        }
+  // ----- AIRPORTS STORE -----
+  if (!db.objectStoreNames.contains('airports')) {
+    db.createObjectStore('airports', {
+      keyPath: 'ICAO'
+    });
+    // Ensure "AirportName" matches your Sheet column exactly
+    db.index('airports').createIndex('AirportName', 'AirportName', { unique: false });
+  }
 
-        // ----- HOTELS STORE -----
-        // Primary key: HotelName — hotels are identified by name
-        // (A composite key would be better for duplicate names across cities,
-        //  but keeping it simple to match the sheet structure)
-        if (!db.objectStoreNames.contains('hotels')) {
-          const hotelsStore = db.createObjectStore('hotels', {
-            keyPath: 'HotelName'
-          });
-          hotelsStore.createIndex('City', 'City', { unique: false });
-        }
+  // ----- HOTELS STORE -----
+  if (!db.objectStoreNames.contains('hotels')) {
+    db.createObjectStore('hotels', {
+      keyPath: 'HotelName' 
+    });
+    db.index('hotels').createIndex('City', 'City', { unique: false });
+  }
 
-        // ----- CITIES STORE -----
-        // Primary key: City name
-        if (!db.objectStoreNames.contains('cities')) {
-          const citiesStore = db.createObjectStore('cities', {
-            keyPath: 'City'
-          });
-          citiesStore.createIndex('Country', 'Country', { unique: false });
-        }
+  // ----- CITIES STORE -----
+  if (!db.objectStoreNames.contains('cities')) {
+    db.createObjectStore('cities', {
+      keyPath: 'City'
+    });
+    db.index('cities').createIndex('Country', 'Country', { unique: false });
+  }
 
-        console.log('[DB] Schema upgraded to version', this.DB_VERSION);
-      };
+  console.log('[DB] Schema upgraded to version', this.DB_VERSION);
+};
 
       // --- SUCCESS: store the connection ---
       request.onsuccess = (event) => {
