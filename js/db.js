@@ -48,13 +48,10 @@ request.onupgradeneeded = (event) => {
   const db = event.target.result;
 
   // ----- BRIEFS STORE -----
-  if (!db.objectStoreNames.contains('briefs')) {
-    // FIX: IndexedDB keyPaths with spaces must be handled carefully. 
-    // It is best to use underscores or camelCase, but since your sheet 
-    // uses "Briefs ID", we must ensure it is defined as a single string.
-    const briefsStore = db.createObjectStore('briefs', {
-      keyPath: 'Briefs ID' 
-    });
+if (!db.objectStoreNames.contains('briefs')) {
+  // MUST have a capital B, capital I, and a space to match your Sheet
+  db.createObjectStore('briefs', { keyPath: 'Briefs ID' }); 
+
     
     briefsStore.createIndex('Flight_Number', 'Flight_Number', { unique: false });
     briefsStore.createIndex('Origin', 'Origin', { unique: false });
